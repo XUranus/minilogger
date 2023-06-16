@@ -17,10 +17,10 @@ enum class LoggerLevel {
     ERROR       = 3
 };
 
-#define DBGLOG(format, args...)     Logger::GetInstance().WriteLog(LoggerLevel::DEBUG, __PRETTY_FUNCTION__, __LINE__ ,format, ##args)
-#define INFOLOG(format, args...)    Logger::GetInstance().WriteLog(LoggerLevel::INFO, __PRETTY_FUNCTION__, __LINE__,format, ##args)
-#define WARNLOG(format, args...)    Logger::GetInstance().WriteLog(LoggerLevel::WARNING, __PRETTY_FUNCTION__, __LINE__, format, ##args)
-#define ERRLOG(format, args...)     Logger::GetInstance().WriteLog(LoggerLevel::ERROR, __PRETTY_FUNCTION__, __LINE__, format, ##args)
+#define DBGLOG(format, args...)     ::xuranus::minilogger::Logger::GetInstance().WriteLog(LoggerLevel::DEBUG, __PRETTY_FUNCTION__, __LINE__ ,format, ##args)
+#define INFOLOG(format, args...)    ::xuranus::minilogger::Logger::GetInstance().WriteLog(LoggerLevel::INFO, __PRETTY_FUNCTION__, __LINE__,format, ##args)
+#define WARNLOG(format, args...)    ::xuranus::minilogger::Logger::GetInstance().WriteLog(LoggerLevel::WARNING, __PRETTY_FUNCTION__, __LINE__, format, ##args)
+#define ERRLOG(format, args...)     ::xuranus::minilogger::Logger::GetInstance().WriteLog(LoggerLevel::ERROR, __PRETTY_FUNCTION__, __LINE__, format, ##args)
 
 class Logger {
 public:
