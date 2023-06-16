@@ -1,2 +1,2 @@
 # minilogger
-c++ loggrr
+c++ mini logger
