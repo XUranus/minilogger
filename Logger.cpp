@@ -73,7 +73,7 @@ void Logger::KeepLog(
     const char* levelStr = g_loggerLevelStr[static_cast<uint32_t>(level)];
     std::string prettyFunction = FormatFunction(function);
     // [datetime][level][message][function:line][threadID]
-    const char* format = "[%s][%s][%s][%s:%u][%lu]";
+    const char* format = "[%s][%s][%s][%s:%u][%lu]\n";
     if (!::snprintf(buffer, LOGGER_BUFFER_MAX_LEN, format,
             datetime.c_str(), levelStr, message, prettyFunction.c_str(), line, threadID)) {
         return;
