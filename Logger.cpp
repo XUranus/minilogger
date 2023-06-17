@@ -26,6 +26,11 @@ Logger& Logger::GetInstance()
     return instance;
 }
 
+void Logger::SetLogLevel(LoggerLevel level)
+{
+    m_level = level;
+}
+
 Logger::Logger()
 {}
 

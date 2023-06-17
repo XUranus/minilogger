@@ -44,17 +44,17 @@ public:
 
     template<class... Args>
     void Log(LoggerLevel level, const char* function, uint32_t line, const char* format, Args...);
-    
-    void KeepLog(LoggerLevel level, const char* function, uint32_t line, const char* message, uint64_t timestamp);
+    void SetLogLevel(LoggerLevel level);
     ~Logger();
 private:
+    void KeepLog(LoggerLevel level, const char* function, uint32_t line, const char* message, uint64_t timestamp);
     Logger();
 
 public:
     static Logger   instance;
 private:
     std::mutex      m_mutex;
-    LoggerLevel     m_level;
+    LoggerLevel     m_level {LoggerLevel::DEBUG};
 };
 
 // format
