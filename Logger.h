@@ -10,64 +10,73 @@
 namespace xuranus {
 namespace minilogger {
 
+const int LOGGER_MESSAGE_BUFFER_MAX_LEN = 4096;
+const int LOGGER_FUNCTION_BUFFER_MAX_LEN = 1024;
+
 enum class LoggerLevel {
     DEBUG       = 0,
     INFO        = 1,
     WARNING     = 2,
-    ERROR       = 3
+    ERROR       = 3,
+    FATAL       = 4
 };
 
 #define DBGLOG(format, args...) \
-    ::xuranus::minilogger::Logger::GetInstance().WriteLog(::xuranus::minilogger::LoggerLevel::DEBUG, __PRETTY_FUNCTION__, __LINE__ ,format, ##args)
+    ::xuranus::minilogger::Logger::GetInstance().Log(::xuranus::minilogger::LoggerLevel::DEBUG, __PRETTY_FUNCTION__, __LINE__ ,format, ##args)
 
 #define INFOLOG(format, args...) \
-    ::xuranus::minilogger::Logger::GetInstance().WriteLog(::xuranus::minilogger::LoggerLevel::INFO, __PRETTY_FUNCTION__, __LINE__,format, ##args)
+    
 
 #define WARNLOG(format, args...) \
-    ::xuranus::minilogger::Logger::GetInstance().WriteLog(::xuranus::minilogger::LoggerLevel::WARNING, __PRETTY_FUNCTION__, __LINE__, format, ##args)
+    ::xuranus::minilogger::Logger::GetInstance().Log(::xuranus::minilogger::LoggerLevel::WARNING, __PRETTY_FUNCTION__, __LINE__, format, ##args)
 
 #define ERRLOG(format, args...) \
-    ::xuranus::minilogger::Logger::GetInstance().WriteLog(::xuranus::minilogger::LoggerLevel::ERROR, __PRETTY_FUNCTION__, __LINE__, format, ##args)
+    ::xuranus::minilogger::Logger::GetInstance().Log(::xuranus::minilogger::LoggerLevel::ERROR, __PRETTY_FUNCTION__, __LINE__, format, ##args)
+
+enum class LoggerTarget {
+    STDOUT = 1,
+    FILE   = 2
+};
 
 class Logger {
 public:
     static Logger& GetInstance();
 
     template<class... Args>
-    void WriteLog(LoggerLevel level, const char* function, int line, const char* format, Args...);
+    void Log(LoggerLevel level, const char* function, uint32_t line, const char* format, Args...);
+    
+    void KeepLog(LoggerLevel level, const char* function, uint32_t line, const char* message, uint64_t timestamp);
     ~Logger();
 private:
     Logger();
 
 public:
-    static Logger instance;
+    static Logger   instance;
 private:
-    std::mutex m_mutex;
+    std::mutex      m_mutex;
+    LoggerLevel     m_level;
 };
 
-
-static std::string TimestampSecondsToDate(uint64_t timestamp)
-{
-    auto millsec = std::chrono::seconds(timestamp);
-    auto tp = std::chrono::time_point<
-    std::chrono::system_clock, std::chrono::seconds>(millsec);
-    auto tt = std::chrono::system_clock::to_time_t(tp);
-    std::tm* now = std::gmtime(&tt);
-    char strtime[100] = "";
-    if (std::strftime(strtime, sizeof(strtime), "%Y-%m-%d %H:%M:%S", now) > 0) {
-        return std::string(strtime);
-    }
-    return std::to_string(timestamp);
-}
-
+// format
 template<class... Args>
-void Logger::WriteLog(LoggerLevel level, const char* function, int line, const char* format, Args... args)
+void Logger::Log(
+    LoggerLevel     level,
+    const char*     function,
+    uint32_t        line,
+    const char*     format,
+    Args...         args)
 {
-    std::lock_guard<std::mutex> lock(m_mutex);
-    std::string date = TimestampSecondsToDate(std::chrono::system_clock::now().time_since_epoch().count() / std::chrono::system_clock::period::den);
-    ::printf("[%s][", date.c_str());
-    ::printf(format, args...);
-    ::printf("][%s:%d]\n", function, line);
+    using clock = std::chrono::system_clock;
+    if (m_level > level) {
+        return;
+    }
+    uint64_t timestamp = clock::now().time_since_epoch().count() / clock::period::den;
+    char messageBuffer[LOGGER_MESSAGE_BUFFER_MAX_LEN] = { '\0' };
+    if (::snprintf(messageBuffer, LOGGER_MESSAGE_BUFFER_MAX_LEN, format, args...) < 0) {
+        memset(messageBuffer, '\0', LOGGER_MESSAGE_BUFFER_MAX_LEN);
+        strcpy(messageBuffer, "...");
+    }
+    KeepLog(level, function, line, messageBuffer, timestamp);
 }
 
 }
