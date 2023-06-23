@@ -38,16 +38,16 @@ enum class LoggerLevel {
 // reference: https://learn.microsoft.com/en-us/cpp/preprocessor/variadic-macros?view=msvc-170
 #ifdef _MSC_VER
 #define DBGLOG(format, ...) \
-    ::xuranus::minilogger::Logger::GetInstance().Log(::xuranus::minilogger::LoggerLevel::DEBUG, __PRETTY_FUNCTION__, __LINE__ ,format, __VA_ARGS__)
+    ::xuranus::minilogger::Logger::GetInstance().Log(::xuranus::minilogger::LoggerLevel::DEBUG, __FUNCSIG__, __LINE__ ,format, __VA_ARGS__)
 
 #define INFOLOG(format, ...) \
-    ::xuranus::minilogger::Logger::GetInstance().Log(::xuranus::minilogger::LoggerLevel::DEBUG, __PRETTY_FUNCTION__, __LINE__ ,format, __VA_ARGS__)
+    ::xuranus::minilogger::Logger::GetInstance().Log(::xuranus::minilogger::LoggerLevel::DEBUG, __FUNCSIG__, __LINE__ ,format, __VA_ARGS__)
 
 #define WARNLOG(format, ...) \
-    ::xuranus::minilogger::Logger::GetInstance().Log(::xuranus::minilogger::LoggerLevel::WARNING, __PRETTY_FUNCTION__, __LINE__, format, __VA_ARGS__)
+    ::xuranus::minilogger::Logger::GetInstance().Log(::xuranus::minilogger::LoggerLevel::WARNING, __FUNCSIG__, __LINE__, format, __VA_ARGS__)
 
 #define ERRLOG(format, ...) \
-    ::xuranus::minilogger::Logger::GetInstance().Log(::xuranus::minilogger::LoggerLevel::ERROR, __PRETTY_FUNCTION__, __LINE__, format, __VA_ARGS__)
+    ::xuranus::minilogger::Logger::GetInstance().Log(::xuranus::minilogger::LoggerLevel::ERROR, __FUNCSIG__, __LINE__, format, __VA_ARGS__)
 #endif
 
 enum class LoggerTarget {
