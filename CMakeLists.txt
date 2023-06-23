@@ -2,7 +2,10 @@ CMAKE_MINIMUM_REQUIRED (VERSION 3.8)
 SET(Project minilogger)
 PROJECT(${Project} C CXX)
 SET(SOURCE_DIR ${${Project}_SOURCE_DIR})
-ADD_COMPILE_OPTIONS(-Wno-format-security)
+
+IF (NOT ${CMAKE_HOST_WIN32})
+    ADD_COMPILE_OPTIONS(-Wno-format-security)
+ENDIF()
 
 ADD_LIBRARY (minilogger
     SHARED
