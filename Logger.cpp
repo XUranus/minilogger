@@ -1,6 +1,5 @@
 #include <cstdarg>
 #include <cstdio>
-#include <unistd.h>
 #include <thread>
 #include "Logger.h"
 
