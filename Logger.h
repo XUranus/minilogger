@@ -90,13 +90,13 @@ void Logger::Log(
     uint64_t timestamp = clock::now().time_since_epoch().count() / clock::period::den;
     char messageBuffer[LOGGER_MESSAGE_BUFFER_MAX_LEN] = { '\0' };
     if (sizeof...(args) == 0) { // empty args optimization
-        strcpy(messageBuffer, format);
+        std::strncpy(messageBuffer, format, sizeof(messageBuffer) - 1);
         KeepLog(level, function, line, messageBuffer, timestamp);
         return;
     }
     if (::snprintf(messageBuffer, LOGGER_MESSAGE_BUFFER_MAX_LEN, format, args...) < 0) {
-        memset(messageBuffer, '\0', LOGGER_MESSAGE_BUFFER_MAX_LEN);
-        strcpy(messageBuffer, "...");
+        std::fill(messageBuffer, messageBuffer + LOGGER_MESSAGE_BUFFER_MAX_LEN, 0);
+        std::strncpy(messageBuffer, "...", sizeof(messageBuffer) - 1);
     }
     KeepLog(level, function, line, messageBuffer, timestamp);
 }

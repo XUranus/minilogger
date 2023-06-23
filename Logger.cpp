@@ -1,6 +1,7 @@
 #include <cstdarg>
 #include <cstdio>
 #include <thread>
+#include <iomanip>
 #include "Logger.h"
 
 using namespace xuranus::minilogger;
@@ -36,18 +37,16 @@ Logger::Logger()
 Logger::~Logger()
 {}
 
-static std::string ParseDateTime(uint64_t timestamp)
+static std::string ParseDateTime(uint64_t millis)
 {
-    auto millsec = std::chrono::seconds(timestamp);
-    auto tp = std::chrono::time_point<
-    std::chrono::system_clock, std::chrono::seconds>(millsec);
-    auto tt = std::chrono::system_clock::to_time_t(tp);
-    std::tm* now = std::gmtime(&tt);
-    char strtime[100] = "";
-    if (std::strftime(strtime, sizeof(strtime), "%Y-%m-%d %H:%M:%S", now) > 0) {
-        return std::string(strtime);
-    }
-    return std::to_string(timestamp);
+    namespace chrono = std::chrono;
+    auto seconds = chrono::duration_cast<chrono::seconds>(chrono::milliseconds(millis));
+    auto timePoint = std::chrono::system_clock::time_point{} + seconds;
+    std::time_t timestamp = std::chrono::system_clock::to_time_t(timePoint);
+    std::tm* timeinfo = std::localtime(&timestamp);
+    std::ostringstream oss;
+    oss << std::put_time(timeinfo, "%Y-%m-%d %H:%M:%S");
+    return oss.str();
 }
 
 static std::string FormatFunction(const char* functionMacroLiteral)
