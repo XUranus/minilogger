@@ -15,4 +15,5 @@ TEST(LoggerTest, BasicLog)
 {
     const char* str = "word";
     INFOLOG("hello %s", str);
+    ERRLOG("hello world");
 }

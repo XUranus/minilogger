@@ -36,7 +36,7 @@ enum class LoggerLevel {
 #endif
 
 // reference: https://learn.microsoft.com/en-us/cpp/preprocessor/variadic-macros?view=msvc-170
-#ifdef __MSVC_VER___
+#ifdef _MSC_VER
 #define DBGLOG(format, ...) \
     ::xuranus::minilogger::Logger::GetInstance().Log(::xuranus::minilogger::LoggerLevel::DEBUG, __PRETTY_FUNCTION__, __LINE__ ,format, __VA_ARGS__)
 
@@ -89,6 +89,11 @@ void Logger::Log(
     }
     uint64_t timestamp = clock::now().time_since_epoch().count() / clock::period::den;
     char messageBuffer[LOGGER_MESSAGE_BUFFER_MAX_LEN] = { '\0' };
+    if (sizeof...(args) == 0) { // empty args optimization
+        strcpy(messageBuffer, format);
+        KeepLog(level, function, line, messageBuffer, timestamp);
+        return;
+    }
     if (::snprintf(messageBuffer, LOGGER_MESSAGE_BUFFER_MAX_LEN, format, args...) < 0) {
         memset(messageBuffer, '\0', LOGGER_MESSAGE_BUFFER_MAX_LEN);
         strcpy(messageBuffer, "...");
