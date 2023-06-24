@@ -2,6 +2,8 @@
 #include <cstdio>
 #include <thread>
 #include <iomanip>
+#include <string>
+#include <sstream>
 #include "Logger.h"
 
 using namespace xuranus::minilogger;
