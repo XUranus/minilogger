@@ -7,6 +7,7 @@ IF (NOT ${CMAKE_HOST_WIN32})
     ADD_COMPILE_OPTIONS(-Wno-format-security)
 ENDIF()
 
+ADD_DEFINITIONS(-DLIBRARY_EXPORT)
 ADD_LIBRARY (minilogger
     SHARED
     "Logger.cpp"

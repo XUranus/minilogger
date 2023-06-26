@@ -14,6 +14,8 @@
 TEST(LoggerTest, BasicLog)
 {
     const char* str = "word";
+    int iv = 10;
     INFOLOG("hello %s", str);
     ERRLOG("hello world");
+    DBGLOG("int value = %d", iv);
 }

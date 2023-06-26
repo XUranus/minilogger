@@ -39,10 +39,10 @@ Logger::Logger()
 Logger::~Logger()
 {}
 
-static std::string ParseDateTime(uint64_t millis)
+static std::string ParseDateTime(uint64_t sec)
 {
     namespace chrono = std::chrono;
-    auto seconds = chrono::duration_cast<chrono::seconds>(chrono::milliseconds(millis));
+    auto seconds = chrono::duration_cast<chrono::seconds>(chrono::seconds(sec));
     auto timePoint = std::chrono::system_clock::time_point{} + seconds;
     std::time_t timestamp = std::chrono::system_clock::to_time_t(timePoint);
     std::tm* timeinfo = std::localtime(&timestamp);
