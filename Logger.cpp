@@ -81,3 +81,13 @@ void Logger::KeepLog(
     std::printf("%s", buffer);
 }
 
+LoggerGuard::LoggerGuard(LoggerLevel level, const char* function, uint32_t line)
+ : m_level(level), m_function(function), m_line(line)
+{
+    Logger::GetInstance().Log(level, function, line, "Logger Guard, Enter %s", function);
+}
+
+LoggerGuard::~LoggerGuard()
+{
+    Logger::GetInstance().Log(m_level, m_function, m_line, "Logger Guard, Exit %s", m_function);
+}
