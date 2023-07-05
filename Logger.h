@@ -7,12 +7,24 @@
 #include <chrono>
 #include <mutex>
 
+/*
+ *
+ * @brief
+ * add -DLIBRARY_EXPORT build param to export lib on Win32 MSVC
+ * define LIBRARY_IMPORT before including Json.h to add __declspec(dllimport) to use dll library
+ * libminilogger is linked static by default
+ */
+
 // define library export macro
 #ifdef _WIN32
     #ifdef LIBRARY_EXPORT
         #define MINILOGGER_API __declspec(dllexport)
     #else
-        #define MINILOGGER_API __declspec(dllimport)
+        #ifdef LIBRARY_IMPORT
+            #define MINILOGGER_API __declspec(dllimport)
+        #else
+            #define MINILOGGER_API
+        #endif
     #endif
 #else
     #define MINILOGGER_API  __attribute__((__visibility__("default")))
@@ -27,7 +39,6 @@
 
 #define MINI_LOGGER_NAMESPACE   ::xuranus::minilogger
 #define MINI_LOGGER_LOG_FUN     MINI_LOGGER_NAMESPACE::Logger::GetInstance().Log
-
 
 #ifdef __linux__
 #define DBGLOG(format, args...) \

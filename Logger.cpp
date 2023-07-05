@@ -42,13 +42,16 @@ Logger::~Logger()
 static std::string ParseDateTime(uint64_t sec)
 {
     namespace chrono = std::chrono;
+    std::ostringstream oss;
     auto seconds = chrono::duration_cast<chrono::seconds>(chrono::seconds(sec));
     auto timePoint = std::chrono::system_clock::time_point{} + seconds;
     std::time_t timestamp = std::chrono::system_clock::to_time_t(timePoint);
     std::tm* timeinfo = std::localtime(&timestamp);
-    std::ostringstream oss;
-    oss << std::put_time(timeinfo, "%Y-%m-%d %H:%M:%S");
-    return oss.str();
+    if (timeinfo == nullptr) {
+        oss << std::put_time(timeinfo, "%Y-%m-%d %H:%M:%S");
+        return oss.str();
+    }
+    return "0000-00-00 00:00:00";
 }
 
 static std::string FormatFunction(const char* functionMacroLiteral)
