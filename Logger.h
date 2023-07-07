@@ -5,7 +5,6 @@
 #include <cstring>
 #include <string>
 #include <chrono>
-#include <mutex>
 
 /*
  *
@@ -38,7 +37,7 @@
 #endif
 
 #define MINI_LOGGER_NAMESPACE   ::xuranus::minilogger
-#define MINI_LOGGER_LOG_FUN     MINI_LOGGER_NAMESPACE::Logger::GetInstance().Log
+#define MINI_LOGGER_LOG_FUN     MINI_LOGGER_NAMESPACE::Log
 
 #ifdef __linux__
 #define DBGLOG(format, args...) \
@@ -81,8 +80,11 @@
 namespace xuranus {
 namespace minilogger {
 
-const int LOGGER_MESSAGE_BUFFER_MAX_LEN = 4096;
-const int LOGGER_FUNCTION_BUFFER_MAX_LEN = 1024;
+const uint64_t LOGGER_MESSAGE_BUFFER_MAX_LEN = 4096;
+const uint64_t LOGGER_FUNCTION_BUFFER_MAX_LEN = 1024;
+const uint64_t ONE_MB = 1024 * 1024;
+const uint64_t LOGGER_BUFFER_SIZE_MAX = 2 * 32 * ONE_MB;
+const uint64_t LOGGER_BUFFER_SIZE_DEFAULT = 16 * ONE_MB;
 
 enum class MINILOGGER_API LoggerLevel {
     DEBUG       = 0,
@@ -97,26 +99,28 @@ enum class MINILOGGER_API LoggerTarget {
     FILE   = 2
 };
 
-class MINILOGGER_API Logger {
-public:
-    static Logger& GetInstance();
-
-    template<class... Args>
-    void Log(LoggerLevel level, const char* function, uint32_t line, const char* format, Args...);
-    void SetLogLevel(LoggerLevel level);
-    ~Logger();
-private:
-    void KeepLog(LoggerLevel level, const char* function, uint32_t line, const char* message, uint64_t timestamp);
-    Logger();
-
-public:
-    static Logger   instance;
-private:
-    std::mutex      m_mutex;
-    LoggerLevel     m_level { LoggerLevel::DEBUG };
+struct LoggerConfig {
+    LoggerTarget    target { LoggerTarget::STDOUT };    // output to file or stdout
+    std::string     logDirPath;                         // directory path to generate log file
+    std::string     fileName;                           // log file name prefix, ${fileName}.log
+    uint64_t        fileSizeMax;                        // log file archive threashold in bytes
+    uint64_t        archiveFilesNumMax;                 // max num of archive file to keep
+    uint64_t        bufferSize { LOGGER_BUFFER_SIZE_DEFAULT }; // logger takes (2 * bufferSize) bytes for buffering
 };
 
-class LoggerGuard {
+class MINILOGGER_API Logger {
+public:
+    static Logger* GetInstance();
+
+    virtual void KeepLog(LoggerLevel level, const char* function, uint32_t line, const char* message, uint64_t timestamp) = 0;
+    virtual bool ShouldKeepLog(LoggerLevel level) const = 0;
+    virtual void SetLogLevel(LoggerLevel level) = 0;
+    virtual bool Init(const LoggerConfig& conf) = 0;
+    virtual void Destroy() = 0;
+    virtual ~Logger();
+};
+
+class MINILOGGER_API LoggerGuard {
 public:
     LoggerGuard(LoggerLevel level, const char* function, uint32_t line);
     ~LoggerGuard();
@@ -128,29 +132,30 @@ private:
 
 // format
 template<class... Args>
-void Logger::Log(
+void Log(
     LoggerLevel     level,
     const char*     function,
     uint32_t        line,
     const char*     format,
     Args...         args)
 {
-    using clock = std::chrono::system_clock;
-    if (m_level > level) {
+    // check current log level
+    if (!Logger::GetInstance()->ShouldKeepLog(level)) {
         return;
     }
+    using clock = std::chrono::system_clock;
     uint64_t timestamp = clock::now().time_since_epoch().count() / clock::period::den;
     char messageBuffer[LOGGER_MESSAGE_BUFFER_MAX_LEN] = { '\0' };
     if (sizeof...(args) == 0) { // empty args optimization
         std::strncpy(messageBuffer, format, sizeof(messageBuffer) - 1);
-        KeepLog(level, function, line, messageBuffer, timestamp);
+        Logger::GetInstance()->KeepLog(level, function, line, messageBuffer, timestamp);
         return;
     }
     if (::snprintf(messageBuffer, LOGGER_MESSAGE_BUFFER_MAX_LEN, format, args...) < 0) {
         std::fill(messageBuffer, messageBuffer + LOGGER_MESSAGE_BUFFER_MAX_LEN, 0);
         std::strncpy(messageBuffer, "...", sizeof(messageBuffer) - 1);
     }
-    KeepLog(level, function, line, messageBuffer, timestamp);
+    Logger::GetInstance()->KeepLog(level, function, line, messageBuffer, timestamp);
 }
 
 }
