@@ -143,8 +143,10 @@ void Log(
     if (!Logger::GetInstance()->ShouldKeepLog(level)) {
         return;
     }
+    namespace chrono = std::chrono;
     using clock = std::chrono::system_clock;
-    uint64_t timestamp = clock::now().time_since_epoch().count() / clock::period::den;
+    //uint64_t timestamp = clock::now().time_since_epoch().count() / clock::period::den;
+    uint64_t timestamp = chrono::duration_cast<chrono::microseconds>(clock::now().time_since_epoch()).count(); 
     char messageBuffer[LOGGER_MESSAGE_BUFFER_MAX_LEN] = { '\0' };
     if (sizeof...(args) == 0) { // empty args optimization
         std::strncpy(messageBuffer, format, sizeof(messageBuffer) - 1);
