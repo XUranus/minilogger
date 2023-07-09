@@ -1,6 +1,7 @@
-# minilogger
+# MiniLogger
 C++ Logger implement
 
+## Feature & TODO
  - [X] Double Buffering & Asynchronized Writting
  - [ ] Record Stacktrace & Dump File From Crash
  - [ ] Configurable Policy
@@ -10,7 +11,7 @@ C++ Logger implement
  - CXX17
  - MSVC/GCC
 
-## usage
+## Usage
 ```cpp
 int main()
 {
@@ -35,10 +36,11 @@ int main()
 
     // destory logger
     Logger::GetInstance()->Destroy();
+    return;
 }
 ```
 
-## build & test
+## Build & Test
 build static/dynamic library:
 ```
 mkdir build && cd build
