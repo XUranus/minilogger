@@ -4,7 +4,7 @@ C++ Logger implement
 ## Feature & TODO
  - [X] Double Buffering & Asynchronized Writting
  - [ ] Record Stacktrace & Dump File From Crash
- - [ ] Configurable Policy
+ - [X] Configurable Congestion Policy
  - [ ] Auto Compressing & Archiving
 
 ## Require

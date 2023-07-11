@@ -131,6 +131,8 @@ public:
 
     void SetLogLevel(LoggerLevel level) override;
 
+    void SetCongestionControlPolicy(CongestionControlPolicy policy) override;
+
     bool Init(const LoggerConfig& conf) override;
 
     void Destroy() override;
@@ -146,6 +148,7 @@ private:
 
 private:
     LoggerLevel             m_level { LoggerLevel::DEBUG };
+    CongestionControlPolicy m_congestionPolicy { CongestionControlPolicy::DROPPING };
     bool                    m_inited { false };
     LoggerConfig            m_config;
     std::ofstream           m_file;
@@ -187,6 +190,11 @@ Logger::~Logger()
 void LoggerImpl::SetLogLevel(LoggerLevel level)
 {
     m_level = level;
+}
+
+void LoggerImpl::SetCongestionControlPolicy(CongestionControlPolicy policy)
+{
+    m_congestionPolicy = policy;
 }
 
 bool LoggerImpl::ShouldKeepLog(LoggerLevel level) const
@@ -256,10 +264,16 @@ void LoggerImpl::KeepLog(
             datetime.c_str(), levelStr, message, prettyFunction.c_str(), line, threadID);
     }
     if (m_config.target == LoggerTarget::STDOUT) {
+        // do not buffering for stdout output
         printf("%s", buffer);
     } else {
         std::unique_lock<std::mutex> lk(m_mutex);
         // lock thread util frontendBufferOffset + length < bufferSize
+        if (m_frontendBufferOffset + length >= m_config.bufferSize &&
+            m_congestionPolicy == CongestionControlPolicy::DROPPING) {
+            // dropping policy take effect here, current log will be dropped
+            return;
+        }
         m_notFull.wait(lk, [&]() {
             return m_frontendBufferOffset + length < m_config.bufferSize; 
         });

@@ -99,6 +99,11 @@ enum class MINILOGGER_API LoggerTarget {
     FILE   = 2
 };
 
+enum class MINILOGGER_API CongestionControlPolicy {
+    BLOCKING = 1,
+    DROPPING     = 2
+};
+
 struct LoggerConfig {
     LoggerTarget    target { LoggerTarget::STDOUT };    // output to file or stdout
     std::string     logDirPath;                         // directory path to generate log file
@@ -111,12 +116,16 @@ struct LoggerConfig {
 class MINILOGGER_API Logger {
 public:
     static Logger* GetInstance();
+    // use fixed configuration to init logger (only can be called once)
+    virtual bool Init(const LoggerConfig& conf) = 0;
+    // change configutation that can be modified at runtime
+    virtual void SetCongestionControlPolicy(CongestionControlPolicy policy);
+    virtual void SetLogLevel(LoggerLevel level) = 0;
+    // must be invoked before application exit
+    virtual void Destroy() = 0;
 
     virtual void KeepLog(LoggerLevel level, const char* function, uint32_t line, const char* message, uint64_t timestamp) = 0;
     virtual bool ShouldKeepLog(LoggerLevel level) const = 0;
-    virtual void SetLogLevel(LoggerLevel level) = 0;
-    virtual bool Init(const LoggerConfig& conf) = 0;
-    virtual void Destroy() = 0;
     virtual ~Logger();
 };
 
