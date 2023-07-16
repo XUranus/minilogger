@@ -72,12 +72,12 @@ static std::string ParseDateTimeFromSeconds(uint64_t timestamp, uint64_t timesta
     }
 
     // Calculate the month and day
-    int monthDays[] = {
+    uint64_t monthDays[] = {
         31,
         ((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
     };
-    int month = 1;
-    int day = 1;
+    uint64_t month = 1;
+    uint64_t day = 1;
     for (; month <= 12; month++) {
         if (days < monthDays[month - 1]) {
             day += days;
@@ -294,7 +294,6 @@ bool LoggerImpl::Init(const LoggerConfig& conf)
         return true;
     }
     m_timezoneTimestampOffset = GetCurrentTimezoneOffset() * 60 * 60;
-    printf("%ld\n", m_timezoneTimestampOffset);
     m_config = conf;
     if (m_config.target == LoggerTarget::FILE) {
         if (InitLoggerFileOutput() &&
