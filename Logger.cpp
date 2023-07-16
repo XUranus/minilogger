@@ -47,16 +47,16 @@ static std::string ParseDateTimeFromSeconds(uint64_t timestamp, uint64_t timesta
 {
     timestamp += timestampOffset;
     // Calculate the individual components
-    uint64_t seconds = timestamp % 60;
+    int64_t seconds = timestamp % 60;
     timestamp /= 60;
-    uint64_t minutes = timestamp % 60;
+    int64_t minutes = timestamp % 60;
     timestamp /= 60;
-    uint64_t hours = timestamp % 24;
+    int64_t hours = timestamp % 24;
     timestamp /= 24;
-    uint64_t days = timestamp;
+    int64_t days = timestamp;
 
     // Calculate the year
-    uint64_t year = 1970;  // Assuming the Unix epoch (January 1, 1970) as the starting point
+    int64_t year = 1970;  // Assuming the Unix epoch (January 1, 1970) as the starting point
     while (days >= 365) {
         if ((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)) {
             if (days >= 366) {
@@ -72,12 +72,12 @@ static std::string ParseDateTimeFromSeconds(uint64_t timestamp, uint64_t timesta
     }
 
     // Calculate the month and day
-    uint64_t monthDays[] = {
+    int64_t monthDays[] = {
         31,
         ((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
     };
-    uint64_t month = 1;
-    uint64_t day = 1;
+    int64_t month = 1;
+    int64_t day = 1;
     for (; month <= 12; month++) {
         if (days < monthDays[month - 1]) {
             day += days;

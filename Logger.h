@@ -95,13 +95,13 @@ enum class MINILOGGER_API LoggerLevel {
 };
 
 enum class MINILOGGER_API LoggerTarget {
-    STDOUT = 1,
-    FILE   = 2
+    STDOUT      = 1,
+    FILE        = 2
 };
 
 enum class MINILOGGER_API CongestionControlPolicy {
-    BLOCKING = 1,
-    DROPPING     = 2
+    BLOCKING    = 1,
+    DROPPING    = 2
 };
 
 struct LoggerConfig {
@@ -119,7 +119,7 @@ public:
     // use fixed configuration to init logger (only can be called once)
     virtual bool Init(const LoggerConfig& conf) = 0;
     // change configutation that can be modified at runtime
-    virtual void SetCongestionControlPolicy(CongestionControlPolicy policy);
+    virtual void SetCongestionControlPolicy(CongestionControlPolicy policy) = 0;
     virtual void SetLogLevel(LoggerLevel level) = 0;
     // must be invoked before application exit
     virtual void Destroy() = 0;

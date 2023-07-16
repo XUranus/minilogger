@@ -22,7 +22,12 @@ protected:
         conf.target = LoggerTarget::FILE;
         conf.archiveFilesNumMax = 10;
         conf.fileName = "demo.log";
-        conf.logDirPath = "/mnt/c/Users/王星校/Desktop/minilogger/wslbuild";
+#ifdef __linux__
+        conf.logDirPath = "/tmp/LoggerTest";
+#endif
+#ifdef _WIN32
+        conf.logDirPath = R"(C:\LoggerTest)";
+#endif
         Logger::GetInstance()->SetLogLevel(LoggerLevel::DEBUG);
         if (!Logger::GetInstance()->Init(conf)) {
             std::cerr << "Init logger failed" << std::endl;
