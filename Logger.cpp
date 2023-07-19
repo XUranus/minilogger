@@ -18,11 +18,21 @@
 using namespace xuranus::minilogger;
 namespace fs = std::filesystem;
 
+#ifdef _WIN32
+    #define NEW_LINE "\r\n"; // CRLF
+#else
+    #define NEW_LINE "\n"; // LF
+#endif
+
 namespace {
     const uint32_t LOGGER_LEVEL_COUNT = 5;
     const uint32_t LOGGER_BUFFER_DEFAULT_LEN = LOGGER_MESSAGE_BUFFER_MAX_LEN + LOGGER_FUNCTION_BUFFER_MAX_LEN + 1024;
+    
+    // [datetime][level][message][function:line][threadID][threadLocalKey]
+    const char* LOG_FORMAT_STR = "[%s.%u][%s][%s][%s:%u][%llu][%s]" NEW_LINE;
 }
 
+// TODO:: use the constexpr version
 static std::string FormatFunction(const char* functionMacroLiteral)
 {
     std::string function = functionMacroLiteral;
@@ -131,6 +141,8 @@ public:
 
     void SetLogLevel(LoggerLevel level) override;
 
+    void SetThreadLocalKey(const std::string& key) override;
+
     void SetCongestionControlPolicy(CongestionControlPolicy policy) override;
 
     bool Init(const LoggerConfig& conf) override;
@@ -178,6 +190,8 @@ const char* g_loggerLevelStr[LOGGER_LEVEL_COUNT] = {
     "FATAL"
 };
 
+thread_local std::string g_threadLocalKey;
+
 Logger* Logger::GetInstance()
 {
     return dynamic_cast<Logger*>(&instance);
@@ -190,6 +204,11 @@ Logger::~Logger()
 void LoggerImpl::SetLogLevel(LoggerLevel level)
 {
     m_level = level;
+}
+
+void LoggerImpl::SetThreadLocalKey(const std::string& key)
+{
+    g_threadLocalKey = key;
 }
 
 void LoggerImpl::SetCongestionControlPolicy(CongestionControlPolicy policy)
@@ -246,22 +265,21 @@ void LoggerImpl::KeepLog(
     char bufferLocal[LOGGER_BUFFER_DEFAULT_LEN] = { '\0' };
     char* bufferEx = nullptr;
     char* buffer = bufferLocal;
-    std::thread::id threadID = std::this_thread::get_id();
+    static std::hash<std::thread::id> ThreadIDHasher;
+    uint64_t threadID = ThreadIDHasher(std::this_thread::get_id());
     std::string datetime = ParseDateTimeFromSeconds(timestamp / 1000000, m_timezoneTimestampOffset);
     uint32_t microSeconds = static_cast<uint32_t>(timestamp % 1000000);
     const char* levelStr = g_loggerLevelStr[static_cast<uint32_t>(level)];
     std::string prettyFunction = FormatFunction(function);
-    // [datetime][level][message][function:line][threadID]
-    const char* format = "[%s.%u][%s][%s][%s:%u][%lu]\n";
-    int length = ::snprintf(buffer, LOGGER_BUFFER_DEFAULT_LEN, format,
-            datetime.c_str(), microSeconds, levelStr, message, prettyFunction.c_str(), line, threadID);
+    int length = ::snprintf(buffer, LOGGER_BUFFER_DEFAULT_LEN, LOG_FORMAT_STR,
+            datetime.c_str(), microSeconds, levelStr, message, prettyFunction.c_str(), line, threadID, g_threadLocalKey.c_str());
     if (length >= LOGGER_BUFFER_DEFAULT_LEN) {
         // truncated buffer other wise
         bufferEx = new char[length + 1];
         memset(bufferEx, 0, sizeof(char) * (length + 1));
         buffer = bufferEx;
-        ::snprintf(bufferEx, length + 1, format,
-            datetime.c_str(), levelStr, message, prettyFunction.c_str(), line, threadID);
+        ::snprintf(bufferEx, length + 1, LOG_FORMAT_STR,
+            datetime.c_str(), microSeconds, levelStr, message, prettyFunction.c_str(), line, threadID, g_threadLocalKey.c_str());
     }
     if (m_config.target == LoggerTarget::STDOUT) {
         // do not buffering for stdout output
@@ -394,4 +412,20 @@ LoggerGuard::LoggerGuard(LoggerLevel level, const char* function, uint32_t line)
 LoggerGuard::~LoggerGuard()
 {
     Log(m_level, m_function, m_line, "Logger Guard, Exit %s", m_function);
+}
+
+LoggerStream::LoggerStream(LoggerLevel level, const char* function, uint32_t line)
+ : m_level(level), m_function(function), m_line(line)
+{}
+
+LoggerStream::~LoggerStream()
+{
+    // check current log level
+    if (!Logger::GetInstance()->ShouldKeepLog(m_level)) {
+        return;
+    }
+    namespace chrono = std::chrono;
+    using clock = std::chrono::system_clock;
+    uint64_t timestamp = chrono::duration_cast<chrono::microseconds>(clock::now().time_since_epoch()).count(); 
+    Logger::GetInstance()->KeepLog(m_level, m_function, m_line, this->str().c_str(), timestamp);
 }

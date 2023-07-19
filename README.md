@@ -4,8 +4,11 @@ C++ Logger implement
 ## Feature & TODO
  - [X] Double Buffering & Asynchronized Writting
  - [ ] Record Stacktrace & Dump File From Crash
- - [X] Configurable Congestion Policy
+ - [X] Configurable Congestion Policy (Blocking/Drop)
  - [ ] Auto Compressing & Archiving
+ - [ ] Evaluate Function Name at Compile Time
+ - [x] Support Setting Thread Local Key
+ - [x] C Style Logger & C++ Style Stream Logger
 
 ## Require
  - CXX17
@@ -33,6 +36,13 @@ int main()
     INFOLOG("hello %s", str);
     ERRLOG("hello world");
     DBGLOG("int value = %d", iv);
+
+    long amount = 500000;
+    MINI_LOG(LINFO)
+        << "MiniLogger is a asynchronize logger that can write "
+        << amount
+        << " logs per second"
+        << LOGENDL;
 
     // destory logger
     Logger::GetInstance()->Destroy();

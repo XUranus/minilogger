@@ -12,7 +12,20 @@
 #include <vector>
 #include <string>
 #include <thread>
+
+#ifdef _WIN32
+#include <direct.h>
+#define GetCurrentDir _getcwd
+#else
+#include <unistd.h>
+#define GetCurrentDir getcwd
+#endif
+
 #include "../Logger.h"
+
+namespace {
+    const std::string LOGGER_FILE_NAME = "demo.log";
+}
 
 class LoggerTest : public ::testing::Test {
 protected:
@@ -21,13 +34,18 @@ protected:
         LoggerConfig conf {};
         conf.target = LoggerTarget::FILE;
         conf.archiveFilesNumMax = 10;
-        conf.fileName = "demo.log";
-#ifdef __linux__
-        conf.logDirPath = "/tmp/LoggerTest";
-#endif
-#ifdef _WIN32
-        conf.logDirPath = R"(C:\LoggerTest)";
-#endif
+        conf.fileName = LOGGER_FILE_NAME;
+
+        // get current path
+        char currentDir[FILENAME_MAX];
+        if (GetCurrentDir(currentDir, sizeof(currentDir)) != nullptr) {
+            std::cout << "Current Directory: " << currentDir << std::endl;
+        } else {
+            std::cerr << "Failed to get current directory." << std::endl;
+        }
+        
+        conf.logDirPath = currentDir;
+        std::cout << "using logger path: " << conf.logDirPath << ", name: " << conf.fileName << std::endl;
         Logger::GetInstance()->SetLogLevel(LoggerLevel::DEBUG);
         if (!Logger::GetInstance()->Init(conf)) {
             std::cerr << "Init logger failed" << std::endl;
@@ -48,6 +66,12 @@ TEST_F(LoggerTest, BasicLogger)
     INFOLOG("hello %s", str);
     ERRLOG("hello world");
     DBGLOG("int value = %d", iv);
+    uint64_t amount = 500000;
+    MINI_LOG(LINFO)
+        << "MiniLogger is a asynchronize logger that can write "
+        << amount
+        << " logs per second"
+        << LOGENDL;
 }
 
 TEST_F(LoggerTest, LoggerGuard)
@@ -64,6 +88,12 @@ static void LogProducerThread(int lineCounter)
     const char* str3 = "hello world hello world";
     const int v1 = 114514;
     const uint64_t v2 = 1919810;
+    // set thread key
+    static std::hash<std::thread::id> hasher;
+    uint64_t threadIdUint64 = hasher(std::this_thread::get_id());
+    const std::string key = std::string("Key_") + std::to_string(threadIdUint64);
+    xuranus::minilogger::Logger::GetInstance()->SetThreadLocalKey(key);
+    // start to log
     for (int i = 0; i < lineCounter; i++) {
         INFOLOG("this is a example log for test performance, str1 = %s, str2 = %s, str3 = %s, int1 = %d, int2 = %lu",
             str1, str2, str3, v1, v2);

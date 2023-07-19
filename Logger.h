@@ -5,7 +5,7 @@
 #include <cstring>
 #include <string>
 #include <chrono>
-
+#include <sstream>
 /*
  *
  * @brief
@@ -30,12 +30,13 @@
 #endif
 
 #ifdef _MSC_VER
-    #define MINI_LOGGER_FUNCTION __FUNCSIG__
+    #define MINI_LOGGER_FUNCTION MINI_LOGGER_NAMESPACE::GetFunctionName(__FUNCSIG__)
 #endif
 #ifdef __linux__
-    #define MINI_LOGGER_FUNCTION __PRETTY_FUNCTION__
+    #define MINI_LOGGER_FUNCTION MINI_LOGGER_NAMESPACE::GetFunctionName(__PRETTY_FUNCTION__)
 #endif
 
+#define ENABLE_STREAM_LOGGER
 #define MINI_LOGGER_NAMESPACE   ::xuranus::minilogger
 #define MINI_LOGGER_LOG_FUN     MINI_LOGGER_NAMESPACE::Log
 
@@ -76,6 +77,17 @@
 
 #define WARNLOG_GUARD \
     MINI_LOGGER_NAMESPACE::LoggerGuard mini_logger_guard(MINI_LOGGER_NAMESPACE::LoggerLevel::WARNING, MINI_LOGGER_FUNCTION, __LINE__)
+
+#ifdef ENABLE_STREAM_LOGGER
+#define MINI_LOG(LOG_LEVEL) MINI_LOGGER_NAMESPACE::LoggerStream(LOG_LEVEL, MINI_LOGGER_FUNCTION, __LINE__)
+#define LOGENDL std::endl
+
+#define LDBG    MINI_LOGGER_NAMESPACE::LoggerLevel::DEBUG
+#define LINFO   MINI_LOGGER_NAMESPACE::LoggerLevel::INFO
+#define LWARN   MINI_LOGGER_NAMESPACE::LoggerLevel::WARNING
+#define LERR    MINI_LOGGER_NAMESPACE::LoggerLevel::ERROR
+#define LFATAL  MINI_LOGGER_NAMESPACE::LoggerLevel::FATAL
+#endif
 
 namespace xuranus {
 namespace minilogger {
@@ -121,6 +133,7 @@ public:
     // change configutation that can be modified at runtime
     virtual void SetCongestionControlPolicy(CongestionControlPolicy policy) = 0;
     virtual void SetLogLevel(LoggerLevel level) = 0;
+    virtual void SetThreadLocalKey(const std::string& key) = 0;
     // must be invoked before application exit
     virtual void Destroy() = 0;
 
@@ -129,11 +142,36 @@ public:
     virtual ~Logger();
 };
 
+/**
+ * @brief Get and format function name at compile time
+ */
+constexpr const char* GetFunctionName(const char* function)
+{
+    // TODO:: compute function name c_str at compile time
+    return function;
+}
+
+/**
+ * @brief record enter/leave a function
+ */
 class MINILOGGER_API LoggerGuard {
 public:
     LoggerGuard(LoggerLevel level, const char* function, uint32_t line);
     ~LoggerGuard();
 private:
+    LoggerLevel     m_level;
+    const char*     m_function;
+    uint32_t        m_line;
+};
+
+/**
+ * @brief provide a c++ stream style log
+ */
+class MINILOGGER_API LoggerStream : public std::ostringstream {
+public:
+    LoggerStream(LoggerLevel level, const char* function, uint32_t line);
+    ~LoggerStream();
+public:
     LoggerLevel     m_level;
     const char*     m_function;
     uint32_t        m_line;
@@ -154,7 +192,6 @@ void Log(
     }
     namespace chrono = std::chrono;
     using clock = std::chrono::system_clock;
-    //uint64_t timestamp = clock::now().time_since_epoch().count() / clock::period::den;
     uint64_t timestamp = chrono::duration_cast<chrono::microseconds>(clock::now().time_since_epoch()).count(); 
     char messageBuffer[LOGGER_MESSAGE_BUFFER_MAX_LEN] = { '\0' };
     if (sizeof...(args) == 0) { // empty args optimization
