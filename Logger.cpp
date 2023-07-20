@@ -5,13 +5,17 @@
 #include <string>
 #include <sstream>
 #include <fstream>
-#include <filesystem>
 #include <mutex>
 #include <condition_variable>
 #include <atomic>
 #include <thread>
 #include <chrono>
 #include <ctime>
+
+#if __cplusplus >= 201703L
+// using std::filesystem requires CXX17
+#include <filesystem>
+#endif
 
 #include "Logger.h"
 
@@ -22,6 +26,12 @@ namespace fs = std::filesystem;
     #define NEW_LINE "\r\n"; // CRLF
 #else
     #define NEW_LINE "\n"; // LF
+#endif
+
+#ifdef _WIN32
+    constexpr auto SEPARATOR = "\\";
+#else
+    constexpr auto SEPARATOR = "/";
 #endif
 
 namespace {
@@ -349,11 +359,16 @@ bool LoggerImpl::InitLoggerBuffer()
 bool LoggerImpl::InitLoggerFileOutput()
 {
     try {
+#if __cplusplus >= 201703L
+        // using std::filesystem requires CXX17
         if (!fs::is_directory(m_config.logDirPath)) {
             return false;
         }
-        fs::path filepath = fs::path(m_config.logDirPath) / fs::path(m_config.fileName);
-        m_file.open(filepath.string(), std::ios::binary | std::ios::app);
+        std::string filepath = (fs::path(m_config.logDirPath) / fs::path(m_config.fileName)).string();
+#else
+        std::string filepath = m_config.logDirPath + SEPARATOR + m_config.fileName;
+#endif
+        m_file.open(filepath, std::ios::binary | std::ios::app);
         if (!m_file) {
             return false;
         }

@@ -11,7 +11,7 @@ C++ Logger implement
  - [x] C Style Logger & C++ Style Stream Logger
 
 ## Require
- - CXX17
+ - CXX11
  - MSVC/GCC
 
 ## Usage
