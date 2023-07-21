@@ -20,7 +20,6 @@
 #include "Logger.h"
 
 using namespace xuranus::minilogger;
-namespace fs = std::filesystem;
 
 #ifdef _WIN32
     #define NEW_LINE "\r\n"; // CRLF
@@ -361,6 +360,7 @@ bool LoggerImpl::InitLoggerFileOutput()
     try {
 #if __cplusplus >= 201703L
         // using std::filesystem requires CXX17
+        namespace fs = std::filesystem;
         if (!fs::is_directory(m_config.logDirPath)) {
             return false;
         }
