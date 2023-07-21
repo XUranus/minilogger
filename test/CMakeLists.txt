@@ -7,7 +7,6 @@ SET(Sources TestMiniLogger.cpp)
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # build test and run code coverage
-OPTION(COVERAGE "enable code coverage check" OFF)
 ENABLE_TESTING()
 
 # auto fetch googletest
