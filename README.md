@@ -57,12 +57,15 @@ mkdir build && cd build
 cmake .. && cmake --build .
 ```
 
-build test coverage:
+build and run test coverage:
 ```
 mkdir build && cd build
-cmake .. -DCMAKE_BUILD_TYPE=Coverage && cmake --build .
-make minilogger_lcov_test # lcov
-make minilogger_gcovr_test # gcovr
+# use lcov
+cmake .. -DCMAKE_BUILD_TYPE=Debug -DCOVERAGE=lcov
+# or use gcovr
+# cmake .. -DCMAKE_BUILD_TYPE=Debug -DCOVERAGE=gcovr
+cmake --build .
+make minilogger_coverage_test
 ```
 
 ## Performance

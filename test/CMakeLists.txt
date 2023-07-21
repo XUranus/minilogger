@@ -1,15 +1,14 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.14)
-
 SET(Project "minilogger_test")
 SET(${Project} C CXX)
 
 SET(Headers)
-
-SET(Sources
-    TestMiniLogger.cpp
-)
-
+SET(Sources TestMiniLogger.cpp)
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
+# build test and run code coverage
+OPTION(COVERAGE "enable code coverage check" OFF)
+ENABLE_TESTING()
 
 # auto fetch googletest
 INCLUDE(FetchContent)
@@ -36,3 +35,27 @@ ADD_TEST(
 
 INCLUDE(GoogleTest)
 gtest_discover_tests(${Project})
+
+# configure code coverage
+IF (${COVERAGE} STREQUAL "lcov")
+    MESSAGE("code coverage is enabled, using lcov")
+    INCLUDE(CodeCoverage.cmake)
+    APPEND_COVERAGE_COMPILER_FLAGS()
+    SETUP_TARGET_FOR_COVERAGE_LCOV(
+        NAME "minilogger_coverage_test"
+        EXECUTABLE make test
+        EXCLUDE "${PROJECT_SOURCE_DIR}/test/*" "/usr/include/*" "*googlemock*" "*googletest*"
+    )
+ENDIF()
+
+IF (${COVERAGE} STREQUAL "gcovr")
+MESSAGE("code coverage is enabled, using gcovr")
+    INCLUDE(CodeCoverage.cmake)
+    APPEND_COVERAGE_COMPILER_FLAGS()
+    SETUP_TARGET_FOR_COVERAGE_GCOVR_HTML(
+        NAME "minilogger_coverage_test"
+        EXECUTABLE make test
+        BASE_DIRECTORY "${PROJECT_SOURCE_DIR}"
+        EXCLUDE "${PROJECT_SOURCE_DIR}/test/*" "/usr/include/*" "*googlemock*" "*googletest*" "*build*"
+    )
+ENDIF()
