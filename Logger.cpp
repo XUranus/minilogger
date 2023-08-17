@@ -268,7 +268,7 @@ void LoggerImpl::KeepLog(
     const char*     message,
     uint64_t        timestamp)
 {
-    if (!m_inited || m_abort) {
+    if ((!m_inited && m_config.target != LoggerTarget::STDOUT) || m_abort) {
         return;
     }
     char bufferLocal[LOGGER_BUFFER_DEFAULT_LEN] = { '\0' };
