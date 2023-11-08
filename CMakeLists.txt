@@ -12,7 +12,8 @@ message("COVERAGE = ${COVERAGE}")
 include(FetchContent)
 FetchContent_Declare(
     libzip
-    GIT_REPOSITORY https://github.com/nih-at/libzip.git
+    GIT_REPOSITORY  https://github.com/nih-at/libzip.git
+    GIT_TAG         0b6ebe6fad8adb1ec95bb5529c5af2185d40c2cf
 )
 FetchContent_MakeAvailable(libzip)
 include_directories(${libzip_SOURCE_DIR}/lib)
