@@ -13,7 +13,6 @@ include(FetchContent)
 FetchContent_Declare(
     libzip
     GIT_REPOSITORY https://github.com/nih-at/libzip.git
-    GIT_TAG origin/master
 )
 FetchContent_MakeAvailable(libzip)
 include_directories(${libzip_SOURCE_DIR}/lib)
