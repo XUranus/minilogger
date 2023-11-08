@@ -1,5 +1,7 @@
 #include <cstdarg>
 #include <cstdio>
+#include <ios>
+#include <system_error>
 #include <thread>
 #include <iomanip>
 #include <string>
@@ -11,6 +13,8 @@
 #include <thread>
 #include <chrono>
 #include <ctime>
+
+#include <zip.h>
 
 #if __cplusplus >= 201703L
 // using std::filesystem requires CXX17
@@ -39,6 +43,7 @@ namespace {
     
     // [datetime][level][message][function:line][threadID][threadLocalKey]
     const char* LOG_FORMAT_STR = "[%s.%u][%s][%s][%s:%u][%llu][%s]" NEW_LINE;
+    const std::string MINILOGGER_ARCHIVE_FILE_EXTENSION = ".zip";
 }
 
 // TODO:: use the constexpr version
@@ -133,6 +138,35 @@ static std::string ParseDateTimeFromSeconds(uint64_t timestamp, uint64_t timesta
     return datetime;
 }
 
+namespace fsutility {
+
+bool IsDirectory(const std::string& path)
+{
+#if __cplusplus >= 201703L
+    // using std::filesystem requires CXX17
+    return std::filesystem::is_directory(path);
+#else
+    // TODO
+    return true;
+#endif
+}
+
+bool Rename(const std::string& oldPath, const std::string& newPath)
+{
+#if __cplusplus >= 201703L
+    // using std::filesystem requires CXX17
+    std::error_code ec;
+    std::filesystem::rename(oldPath, newPath, ec);
+    return !ec;
+#else
+    // TODO
+    return false;
+#endif
+}
+
+}
+
+
 // to prevent header corruption
 class LoggerImpl : public Logger {
 public:
@@ -166,6 +200,9 @@ private:
     bool InitLoggerBuffer();
     bool StartConsumerThread();
     void ConsumerThread();
+    std::string GetCurrentLogFilePath() const;
+    void SwitchToNewLogFile();
+    void AsyncCreateArchiveFile(const std::string& tempLogFilePath, const std::string& archiveFilePath);
 
 private:
     LoggerLevel             m_level { LoggerLevel::DEBUG };
@@ -355,20 +392,18 @@ bool LoggerImpl::InitLoggerBuffer()
     return true;
 }
 
+std::string LoggerImpl::GetCurrentLogFilePath() const
+{
+    return m_config.logDirPath + SEPARATOR + m_config.fileName;
+}
+
 bool LoggerImpl::InitLoggerFileOutput()
 {
     try {
-#if __cplusplus >= 201703L
-        // using std::filesystem requires CXX17
-        namespace fs = std::filesystem;
-        if (!fs::is_directory(m_config.logDirPath)) {
+        if (!fsutility::IsDirectory(m_config.logDirPath)) {
             return false;
         }
-        std::string filepath = (fs::path(m_config.logDirPath) / fs::path(m_config.fileName)).string();
-#else
-        std::string filepath = m_config.logDirPath + SEPARATOR + m_config.fileName;
-#endif
-        m_file.open(filepath, std::ios::binary | std::ios::app);
+        m_file.open(GetCurrentLogFilePath(), std::ios::binary | std::ios::app);
         if (!m_file) {
             return false;
         }
@@ -407,6 +442,9 @@ void LoggerImpl::ConsumerThread()
         }
         // start I/O
         m_file.write(m_backendBuffer, m_backendBufferOffset);
+        if (m_file.tellp() >= m_config.fileSizeMax) {
+            SwitchToNewLogFile();
+        }
         if (m_abort) {
             break;
         }
@@ -415,6 +453,29 @@ void LoggerImpl::ConsumerThread()
         m_file.flush();
         m_file.close();
     }
+}
+
+void LoggerImpl::SwitchToNewLogFile()
+{
+    if (m_file.is_open()) {
+        m_file.close();
+    }
+    std::error_code ec;
+    std::string currentLogFilePath = GetCurrentLogFilePath();
+    std::string tempLogFilePath;
+    if (!fsutility::Rename(currentLogFilePath, tempLogFilePath)) {
+        // TODO:: failed to switch new file due to rename failed
+        return;
+    }
+    std::string archiveFileName = m_config.archiveFileName + MINILOGGER_ARCHIVE_FILE_EXTENSION;
+    std::string archiveFilePath = m_config.logDirPath + SEPARATOR + archiveFileName;
+    InitLoggerFileOutput();
+    AsyncCreateArchiveFile(tempLogFilePath, archiveFilePath);
+}
+
+void LoggerImpl::AsyncCreateArchiveFile(const std::string& tempLogFilePath, const std::string& archiveFilePath)
+{
+
 }
 
 // implement LoggerGuard from here

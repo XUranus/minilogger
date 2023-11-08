@@ -1,8 +1,10 @@
 #ifndef LOGGER_HEADER_H
 #define LOGGER_HEADER_H
 
+#include <cstddef>
 #include <cstdio>
 #include <cstring>
+#include <iterator>
 #include <string>
 #include <chrono>
 #include <sstream>
@@ -94,9 +96,9 @@ namespace minilogger {
 
 const uint64_t LOGGER_MESSAGE_BUFFER_MAX_LEN = 4096;
 const uint64_t LOGGER_FUNCTION_BUFFER_MAX_LEN = 1024;
-const uint64_t ONE_MB = 1024 * 1024;
-const uint64_t LOGGER_BUFFER_SIZE_MAX = 2 * 32 * ONE_MB;
-const uint64_t LOGGER_BUFFER_SIZE_DEFAULT = 16 * ONE_MB;
+const std::size_t ONE_MB = 1024 * 1024;
+const std::size_t LOGGER_BUFFER_SIZE_MAX = 2 * 32 * ONE_MB;
+const std::size_t LOGGER_BUFFER_SIZE_DEFAULT = 16 * ONE_MB;
 
 enum class MINILOGGER_API LoggerLevel {
     DEBUG       = 0,
@@ -117,12 +119,13 @@ enum class MINILOGGER_API CongestionControlPolicy {
 };
 
 struct LoggerConfig {
-    LoggerTarget    target { LoggerTarget::STDOUT };    // output to file or stdout
-    std::string     logDirPath;                         // directory path to generate log file
-    std::string     fileName;                           // log file name prefix, ${fileName}.log
-    uint64_t        fileSizeMax;                        // log file archive threashold in bytes
-    uint64_t        archiveFilesNumMax;                 // max num of archive file to keep
-    uint64_t        bufferSize { LOGGER_BUFFER_SIZE_DEFAULT }; // logger takes (2 * bufferSize) bytes for buffering
+    LoggerTarget    target { LoggerTarget::STDOUT };           ///> output to file or stdout
+    std::string     logDirPath;                                ///> directory path to generate log file
+    std::string     fileName;                                  ///> log file name prefix, ${fileName}.log
+    std::size_t     fileSizeMax;                               ///> log file archive threashold in bytes
+    std::string     archiveFileName;                           ///> archive file name, no extension required
+    uint64_t        archiveFilesNumMax;                        ///> max num of archive file to keep
+    std::size_t     bufferSize { LOGGER_BUFFER_SIZE_DEFAULT }; ///> logger takes 2 * bufferSize bytes for buffering
 };
 
 class MINILOGGER_API Logger {
