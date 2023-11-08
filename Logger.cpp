@@ -151,7 +151,7 @@ bool IsDirectory(const std::string& path)
 #endif
 }
 
-bool Rename(const std::string& oldPath, const std::string& newPath)
+bool RenameFile(const std::string& oldPath, const std::string& newPath)
 {
 #if __cplusplus >= 201703L
     // using std::filesystem requires CXX17
@@ -164,8 +164,12 @@ bool Rename(const std::string& oldPath, const std::string& newPath)
 #endif
 }
 
+bool RemoveFile(const std::string& path)
+{
+    // TODO
+    return false;
 }
-
+}
 
 // to prevent header corruption
 class LoggerImpl : public Logger {
@@ -463,7 +467,7 @@ void LoggerImpl::SwitchToNewLogFile()
     std::error_code ec;
     std::string currentLogFilePath = GetCurrentLogFilePath();
     std::string tempLogFilePath;
-    if (!fsutility::Rename(currentLogFilePath, tempLogFilePath)) {
+    if (!fsutility::RenameFile(currentLogFilePath, tempLogFilePath)) {
         // TODO:: failed to switch new file due to rename failed
         return;
     }
@@ -475,7 +479,21 @@ void LoggerImpl::SwitchToNewLogFile()
 
 void LoggerImpl::AsyncCreateArchiveFile(const std::string& tempLogFilePath, const std::string& archiveFilePath)
 {
-
+    ::zip_t* archive = nullptr;
+    archive = ::zip_open(archiveFilePath.c_str(), ZIP_CREATE | ZIP_TRUNCATE, NULL);
+    if (archive == nullptr) {
+        // TODO:: create archive error
+        return;
+    }
+    ::zip_source_t* source = ::zip_source_file(archive, "app.log", 0, 0);
+    if (source != nullptr) {
+        // TODO:: handle error
+        ::zip_close(archive);
+        return;
+    }
+    ::zip_file_add(archive, archiveFilePath.c_str(), source, ZIP_FL_ENC_UTF_8);
+    ::zip_close(archive);
+    fsutility::RemoveFile(tempLogFilePath);
 }
 
 // implement LoggerGuard from here

@@ -8,6 +8,17 @@ message("SOURCE_DIR = ${SOURCE_DIR}")
 message("CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE}")
 message("COVERAGE = ${COVERAGE}")
 
+# compile dependencies
+include(FetchContent)
+FetchContent_Declare(
+    libzip
+    GIT_REPOSITORY https://github.com/nih-at/libzip.git
+    GIT_TAG origin/master
+)
+FetchContent_MakeAvailable(libzip)
+include_directories(${libzip_SOURCE_DIR}/lib)
+message("libzip_SOURCE_DIR = ${libzip_SOURCE_DIR}")
+
 # supress MSVC/GCC warnings
 if(${CMAKE_HOST_WIN32})
     set(CMAKE_CXX_FLAGS_DEBUG "/MTd /Zi /Ob0 /Od /RTC1")
@@ -28,12 +39,14 @@ add_library(${MINILOGGER_DYNAMIC_LIBRARY_TARGET} SHARED ${Sources} ${Headers})
 set_property(TARGET ${MINILOGGER_DYNAMIC_LIBRARY_TARGET} PROPERTY CXX_STANDARD 11)
 # to generate export library when build dynamic library, pass LIBRARY_EXPORT macro
 target_compile_definitions(${MINILOGGER_DYNAMIC_LIBRARY_TARGET} PRIVATE -DLIBRARY_EXPORT)
+target_link_libraries(${MINILOGGER_DYNAMIC_LIBRARY_TARGET} zip)
 
 # build a static library
 set(MINILOGGER_STATIC_LIBRARY_TARGET ${Project}_static)
 message("Build minilogger static library ${MINILOGGER_STATIC_LIBRARY_TARGET}")
 add_library(${MINILOGGER_STATIC_LIBRARY_TARGET} STATIC ${Sources} ${Headers})
 set_property(TARGET ${MINILOGGER_STATIC_LIBRARY_TARGET} PROPERTY CXX_STANDARD 11)
+target_link_libraries(${MINILOGGER_STATIC_LIBRARY_TARGET} zip)
 
 # set -DCMAKE_BUILD_TYPE=Debug to enable LLT, set -DCOVERAGE=ON to enable code coverage
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
