@@ -51,7 +51,7 @@ target_link_libraries(${MINILOGGER_STATIC_LIBRARY_TARGET} zip)
 # set -DCMAKE_BUILD_TYPE=Debug to enable LLT, set -DCOVERAGE=ON to enable code coverage
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     # these config must be put at the level of source code in order to append compile flags
-    if (${COVERAGE} STREQUAL "lcov" OR ${COVERAGE} STREQUAL "gcovr")
+    if ("${COVERAGE}" STREQUAL "lcov" OR "${COVERAGE}" STREQUAL "gcovr")
         message("code coverage is enabled, COVERAGE = ${COVERAGE}, append coverage compiler flags")
         include(${SOURCE_DIR}/test/CodeCoverage.cmake)
         APPEND_COVERAGE_COMPILER_FLAGS()

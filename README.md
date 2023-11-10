@@ -14,7 +14,7 @@ A lightweight C++ Logger implement
  - [X] Double Buffering & Asynchronized Writting
  - [ ] Record Stacktrace & Dump File From Crash
  - [X] Configurable Congestion Policy (Blocking/Drop)
- - [ ] Auto Compressing & Archiving
+ - [X] Auto Compressing & Archiving
  - [ ] Evaluate Function Name at Compile Time
  - [x] Support Setting Thread Local Key
  - [x] C Style Logger & C++ Style Stream Logger
@@ -22,6 +22,7 @@ A lightweight C++ Logger implement
 ## Require
  - CXX11
  - MSVC2015+/GCC4.9+
+ - zlib & libzip
 
 ## Usage
 ```cpp

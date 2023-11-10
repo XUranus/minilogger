@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <cstdarg>
 #include <cstdio>
 #include <ios>
@@ -16,14 +17,41 @@
 
 #include <zip.h>
 
+
+// include windows filesystem releated headers
+#ifdef _WIN32
+
+#ifndef _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING
+#define _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING
+#endif
+#ifndef UNICODE
+#define UNICODE
+#endif
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+
+// headers for convert UTF-8 UTF-16
+#include <locale>
+#include <codecvt>
+
+#include <Windows.h>
+#endif
+
+// include linux filesystem releated headers
+#ifdef __linux__
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+#endif
+
 #if __cplusplus >= 201703L
 // using std::filesystem requires CXX17
 #include <filesystem>
 #endif
 
 #include "Logger.h"
-
-using namespace xuranus::minilogger;
 
 #ifdef _WIN32
     #define NEW_LINE "\r\n"; // CRLF
@@ -36,6 +64,8 @@ using namespace xuranus::minilogger;
 #else
     constexpr auto SEPARATOR = "/";
 #endif
+
+using namespace xuranus::minilogger;
 
 namespace {
     const uint32_t LOGGER_LEVEL_COUNT = 5;
@@ -138,40 +168,92 @@ static std::string ParseDateTimeFromSeconds(uint64_t timestamp, uint64_t timesta
     return datetime;
 }
 
+template<class... Args>
+void InternalErrorLog(const char* format, Args... args)
+{
+    char messageBuffer[LOGGER_MESSAGE_BUFFER_MAX_LEN] = { '\0' };
+    if (sizeof...(args) == 0) { // empty args optimization
+        std::strncpy(messageBuffer, format, sizeof(messageBuffer) - 1);
+    } else if (::snprintf(messageBuffer, LOGGER_MESSAGE_BUFFER_MAX_LEN, format, args...) < 0) {
+        // FATAL internal error, should be checked at dev time
+        return;
+    }
+    // TODO:: record message buffer into another place
+}
+
+#ifdef _WIN32
+std::wstring Utf8ToUtf16(const std::string& str)
+{
+    using ConvertTypeX = std::codecvt_utf8_utf16<wchar_t>;
+    std::wstring_convert<ConvertTypeX> converterX;
+    std::wstring wstr = converterX.from_bytes(str);
+    return wstr;
+}
+
+std::string Utf16ToUtf8(const std::wstring& wstr)
+{
+    using ConvertTypeX = std::codecvt_utf8_utf16<wchar_t>;
+    std::wstring_convert<ConvertTypeX> converterX;
+    return converterX.to_bytes(wstr);
+}
+#endif
+
+
+/**
+ * @brief mutiple-platform filesystem api
+ */
 namespace fsutility {
 
 bool IsDirectory(const std::string& path)
 {
-#if __cplusplus >= 201703L
-    // using std::filesystem requires CXX17
+#if defined (_WIN32)
+    std::wstring wPath = Utf8ToUtf16(path);
+    DWORD attribute = ::GetFileAttributesW(wPath.c_str());
+    return attribute != INVALID_FILE_ATTRIBUTES && (attribute & FILE_ATTRIBUTE_DIRECTORY) != 0;
+#elif defined (__linux__)
+    struct stat st;
+    return (::stat(path.c_str(), &st) == 0 && (st.st_mode & S_IFDIR) != 0);
+#elif __cplusplus >= 201703L
     return std::filesystem::is_directory(path);
 #else
-    // TODO
-    return true;
+    static_assert(false);
 #endif
 }
 
 bool RenameFile(const std::string& oldPath, const std::string& newPath)
 {
-#if __cplusplus >= 201703L
-    // using std::filesystem requires CXX17
+#if defined (_WIN32)
+    return ::MoveFileW(Utf8ToUtf16(oldPath).c_str(), Utf8ToUtf16(newPath).c_str());
+#elif defined (__linux__)
+    return ::rename(oldPath.c_str(), newPath.c_str()) == 0;
+#elif __cplusplus >= 201703L
     std::error_code ec;
     std::filesystem::rename(oldPath, newPath, ec);
     return !ec;
 #else
-    // TODO
-    return false;
+    static_assert(false);
 #endif
 }
 
 bool RemoveFile(const std::string& path)
 {
-    // TODO
-    return false;
+#if defined (_WIN32)
+    return ::DeleteFileW(Utf8ToUtf16(path).c_str());
+#elif defined (__linux__)
+    return ::remove(path.c_str()) == 0;
+#elif __cplusplus >= 201703L
+    std::error_code ec;
+    std::filesystem::remove(path, ec);
+    return !ec;
+#else
+    static_assert(false);
+#endif
 }
 }
 
-// to prevent header corruption
+/**
+ * @brief Logger implementation, used to prevent header corruption
+ */
 class LoggerImpl : public Logger {
 public:
     LoggerImpl();
@@ -205,6 +287,8 @@ private:
     bool StartConsumerThread();
     void ConsumerThread();
     std::string GetCurrentLogFilePath() const;
+    std::string GenerateTempLogFilePath() const;
+    std::string GenerateArchiveFilePath() const;
     void SwitchToNewLogFile();
     void AsyncCreateArchiveFile(const std::string& tempLogFilePath, const std::string& archiveFilePath);
 
@@ -401,6 +485,28 @@ std::string LoggerImpl::GetCurrentLogFilePath() const
     return m_config.logDirPath + SEPARATOR + m_config.fileName;
 }
 
+/**
+ * @brief generate a temp log file path to rename current log file
+ */
+std::string LoggerImpl::GenerateTempLogFilePath() const
+{
+    // temp file suffix need to be unique to handle concurrent rename case
+    std::string timestamp = std::to_string(std::chrono::steady_clock::now().time_since_epoch().count());
+    std::string tempFileSuffix = std::string(".") + timestamp + ".tmp";
+    return m_config.logDirPath + SEPARATOR + m_config.fileName + tempFileSuffix;
+}
+
+/**
+ * @brief generate a archive file path for current log file
+ */
+std::string LoggerImpl::GenerateArchiveFilePath() const
+{
+    std::string timestamp = std::to_string(std::chrono::steady_clock::now().time_since_epoch().count());
+    std::string archiveFileName = m_config.archiveFileName + "." + timestamp + MINILOGGER_ARCHIVE_FILE_EXTENSION;
+    std::string archiveFilePath = m_config.logDirPath + SEPARATOR + archiveFileName;
+    return archiveFilePath;
+}
+
 bool LoggerImpl::InitLoggerFileOutput()
 {
     try {
@@ -466,13 +572,13 @@ void LoggerImpl::SwitchToNewLogFile()
     }
     std::error_code ec;
     std::string currentLogFilePath = GetCurrentLogFilePath();
-    std::string tempLogFilePath;
+    std::string tempLogFilePath = GenerateTempLogFilePath();
     if (!fsutility::RenameFile(currentLogFilePath, tempLogFilePath)) {
-        // TODO:: failed to switch new file due to rename failed
+        InternalErrorLog("failed to rename %s to %s",
+            currentLogFilePath.c_str(), tempLogFilePath.c_str());
         return;
     }
-    std::string archiveFileName = m_config.archiveFileName + MINILOGGER_ARCHIVE_FILE_EXTENSION;
-    std::string archiveFilePath = m_config.logDirPath + SEPARATOR + archiveFileName;
+    std::string archiveFilePath = GenerateArchiveFilePath();
     InitLoggerFileOutput();
     AsyncCreateArchiveFile(tempLogFilePath, archiveFilePath);
 }
@@ -482,18 +588,21 @@ void LoggerImpl::AsyncCreateArchiveFile(const std::string& tempLogFilePath, cons
     ::zip_t* archive = nullptr;
     archive = ::zip_open(archiveFilePath.c_str(), ZIP_CREATE | ZIP_TRUNCATE, NULL);
     if (archive == nullptr) {
-        // TODO:: create archive error
+        InternalErrorLog("failed to open archive %s", archiveFilePath.c_str());
         return;
     }
-    ::zip_source_t* source = ::zip_source_file(archive, "app.log", 0, 0);
-    if (source != nullptr) {
-        // TODO:: handle error
+    ::zip_source_t* source = ::zip_source_file(archive, tempLogFilePath.c_str(), 0, 0);
+    if (source == nullptr) {
+        InternalErrorLog("failed to source %s to archive file %s", archiveFilePath.c_str());
         ::zip_close(archive);
         return;
     }
-    ::zip_file_add(archive, archiveFilePath.c_str(), source, ZIP_FL_ENC_UTF_8);
+    ::zip_file_add(archive, m_config.fileName.c_str(), source, ZIP_FL_ENC_UTF_8);
     ::zip_close(archive);
-    fsutility::RemoveFile(tempLogFilePath);
+    if (!fsutility::RemoveFile(tempLogFilePath)) {
+        InternalErrorLog("failed to remove temp file %s", tempLogFilePath.c_str());
+        return;
+    }
 }
 
 // implement LoggerGuard from here

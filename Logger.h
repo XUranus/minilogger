@@ -203,6 +203,7 @@ void Log(
         return;
     }
     if (::snprintf(messageBuffer, LOGGER_MESSAGE_BUFFER_MAX_LEN, format, args...) < 0) {
+        // TODO
         std::fill(messageBuffer, messageBuffer + LOGGER_MESSAGE_BUFFER_MAX_LEN, 0);
         std::strncpy(messageBuffer, "...", sizeof(messageBuffer) - 1);
     }

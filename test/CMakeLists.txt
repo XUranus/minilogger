@@ -36,7 +36,7 @@ include(GoogleTest)
 gtest_discover_tests(${Project})
 
 # configure code coverage
-if (${COVERAGE} STREQUAL "lcov")
+if ("${COVERAGE}" STREQUAL "lcov")
     message("code coverage is enabled, using lcov")
     include(CodeCoverage.cmake)
     APPEND_COVERAGE_COMPILER_FLAGS()
@@ -45,10 +45,8 @@ if (${COVERAGE} STREQUAL "lcov")
         EXECUTABLE make test
         EXCLUDE "${PROJECT_SOURCE_DIR}/test/*" "/usr/include/*" "*googlemock*" "*googletest*"
     )
-endif()
-
-if (${COVERAGE} STREQUAL "gcovr")
-message("code coverage is enabled, using gcovr")
+elseif ("${COVERAGE}" STREQUAL "gcovr")
+    message("code coverage is enabled, using gcovr")
     include(CodeCoverage.cmake)
     APPEND_COVERAGE_COMPILER_FLAGS()
     SETUP_TARGET_FOR_COVERAGE_GCOVR_HTML(

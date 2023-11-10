@@ -33,7 +33,9 @@ protected:
         using namespace xuranus::minilogger;
         LoggerConfig conf {};
         conf.target = LoggerTarget::FILE;
+        conf.fileSizeMax = 1024 * 1024 * 100; // 100MB
         conf.archiveFilesNumMax = 10;
+        conf.archiveFileName = LOGGER_FILE_NAME;
         conf.fileName = LOGGER_FILE_NAME;
 
         // get current path
