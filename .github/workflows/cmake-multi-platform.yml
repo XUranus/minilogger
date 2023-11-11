@@ -59,6 +59,11 @@ jobs:
       run: |
         vcpkg install zlib
 
+    - name: Install bzip2 on windows
+      if: matrix.os == 'windows-latest'
+      run: |
+        vcpkg install bzip2  
+  
     - name: Install libzip on windows
       if: matrix.os == 'windows-latest'
       run: |
