@@ -8,34 +8,38 @@ message(STATUS "SOURCE_DIR = ${SOURCE_DIR}")
 message(STATUS "CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE}")
 message(STATUS "COVERAGE = ${COVERAGE}")
 
-# check existing zlib and libzip or download and compile it
-find_package(zlib 1.1.2)
-if (ZLIB_FOUND)
-    message(STATUS "using local zlib, ZLIB_DIR=${ZLIB_DIR}")
+# check existing zlib and libzip or download and compile it`
+if(${CMAKE_HOST_WIN32})
+    # github workflow cannot compile libzip
+    message(STATUS "Windows host need to install zlib and libzip first!")
 else()
-    message(STATUS "no local zlib found, ready to download and compile locally")
-    include(FetchContent)
-    FetchContent_Declare(
-        zlib
-        URL https://github.com/madler/zlib/archive/15c45adb76e81a7e3a8a9e17b2a56eb90f668f44.zip
-    )
-    FetchContent_MakeAvailable(zlib)
-    message(STATUS "zlib_SOURCE_DIR = ${zlib_SOURCE_DIR}")
-endif()
+    find_package(zlib 1.1.2)
+    if (ZLIB_FOUND)
+        message(STATUS "using local zlib, ZLIB_DIR=${ZLIB_DIR}")
+    else()
+        message(STATUS "no local zlib found, ready to download and compile locally")
+        include(FetchContent)
+        FetchContent_Declare(
+            zlib
+            URL https://github.com/madler/zlib/archive/15c45adb76e81a7e3a8a9e17b2a56eb90f668f44.zip
+        )
+        FetchContent_MakeAvailable(zlib)
+        message(STATUS "zlib_SOURCE_DIR = ${zlib_SOURCE_DIR}")
+    endif()
 
-find_package(libzip)
-if (libzip_FOUND)
-    message(STATUS "local libzip found, libzip_DIR = ${libzip_DIR}")
-else()
-    message(STATUS "no local libzip found, ready to download and compile locally")
-    include(FetchContent)
-    FetchContent_Declare(
-        libzip
-        URL https://github.com/nih-at/libzip/archive/0b6ebe6fad8adb1ec95bb5529c5af2185d40c2cf.zip
-    )
-    FetchContent_MakeAvailable(libzip)
-#    include_directories(${libzip_SOURCE_DIR}/lib)
-    message(STATUS "libzip_SOURCE_DIR = ${libzip_SOURCE_DIR}")
+    find_package(libzip)
+    if (libzip_FOUND)
+        message(STATUS "local libzip found, libzip_DIR = ${libzip_DIR}")
+    else()
+        message(STATUS "no local libzip found, ready to download and compile locally")
+        include(FetchContent)
+        FetchContent_Declare(
+            libzip
+            URL https://github.com/nih-at/libzip/archive/0b6ebe6fad8adb1ec95bb5529c5af2185d40c2cf.zip
+        )
+        FetchContent_MakeAvailable(libzip)
+        message(STATUS "libzip_SOURCE_DIR = ${libzip_SOURCE_DIR}")
+    endif()
 endif()
 
 # supress MSVC/GCC warnings
