@@ -33,28 +33,13 @@
 
 #ifdef _MSC_VER
     #define MINI_LOGGER_FUNCTION MINI_LOGGER_NAMESPACE::GetFunctionName(__FUNCSIG__)
-#endif
-#ifdef __linux__
+#else
     #define MINI_LOGGER_FUNCTION MINI_LOGGER_NAMESPACE::GetFunctionName(__PRETTY_FUNCTION__)
 #endif
 
 #define ENABLE_STREAM_LOGGER
 #define MINI_LOGGER_NAMESPACE   ::xuranus::minilogger
 #define MINI_LOGGER_LOG_FUN     MINI_LOGGER_NAMESPACE::Log
-
-#ifdef __linux__
-#define DBGLOG(format, args...) \
-    MINI_LOGGER_LOG_FUN(MINI_LOGGER_NAMESPACE::LoggerLevel::DEBUG, MINI_LOGGER_FUNCTION, __LINE__ ,format, ##args)
-
-#define INFOLOG(format, args...) \
-    MINI_LOGGER_LOG_FUN(MINI_LOGGER_NAMESPACE::LoggerLevel::DEBUG, MINI_LOGGER_FUNCTION, __LINE__ ,format, ##args)    
-
-#define WARNLOG(format, args...) \
-    MINI_LOGGER_LOG_FUN(MINI_LOGGER_NAMESPACE::LoggerLevel::WARNING, MINI_LOGGER_FUNCTION, __LINE__, format, ##args)
-
-#define ERRLOG(format, args...) \
-    MINI_LOGGER_LOG_FUN(MINI_LOGGER_NAMESPACE::LoggerLevel::ERROR, MINI_LOGGER_FUNCTION, __LINE__, format, ##args)
-#endif
 
 // reference: https://learn.microsoft.com/en-us/cpp/preprocessor/variadic-macros?view=msvc-170
 #ifdef _MSC_VER
@@ -69,6 +54,20 @@
 
 #define ERRLOG(format, ...) \
     MINI_LOGGER_LOG_FUN(MINI_LOGGER_NAMESPACE::LoggerLevel::ERROR, MINI_LOGGER_FUNCTION, __LINE__, format, __VA_ARGS__)
+
+#else
+
+#define DBGLOG(format, args...) \
+    MINI_LOGGER_LOG_FUN(MINI_LOGGER_NAMESPACE::LoggerLevel::DEBUG, MINI_LOGGER_FUNCTION, __LINE__ ,format, ##args)
+
+#define INFOLOG(format, args...) \
+    MINI_LOGGER_LOG_FUN(MINI_LOGGER_NAMESPACE::LoggerLevel::DEBUG, MINI_LOGGER_FUNCTION, __LINE__ ,format, ##args)    
+
+#define WARNLOG(format, args...) \
+    MINI_LOGGER_LOG_FUN(MINI_LOGGER_NAMESPACE::LoggerLevel::WARNING, MINI_LOGGER_FUNCTION, __LINE__, format, ##args)
+
+#define ERRLOG(format, args...) \
+    MINI_LOGGER_LOG_FUN(MINI_LOGGER_NAMESPACE::LoggerLevel::ERROR, MINI_LOGGER_FUNCTION, __LINE__, format, ##args)
 #endif
 
 #define DBGLOG_GUARD \

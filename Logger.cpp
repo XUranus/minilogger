@@ -36,19 +36,14 @@
 #include <codecvt>
 
 #include <Windows.h>
-#endif
 
-// include linux filesystem releated headers
-#ifdef __linux__
+#else
+
+// include posix filesystem releated headers
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
-#endif
-
-#if __cplusplus >= 201703L
-// using std::filesystem requires CXX17
-#include <filesystem>
 #endif
 
 #include "Logger.h"
@@ -210,13 +205,9 @@ bool IsDirectory(const std::string& path)
     std::wstring wPath = Utf8ToUtf16(path);
     DWORD attribute = ::GetFileAttributesW(wPath.c_str());
     return attribute != INVALID_FILE_ATTRIBUTES && (attribute & FILE_ATTRIBUTE_DIRECTORY) != 0;
-#elif defined (__linux__)
+#else
     struct stat st;
     return (::stat(path.c_str(), &st) == 0 && (st.st_mode & S_IFDIR) != 0);
-#elif __cplusplus >= 201703L
-    return std::filesystem::is_directory(path);
-#else
-    static_assert(false);
 #endif
 }
 
@@ -224,14 +215,8 @@ bool RenameFile(const std::string& oldPath, const std::string& newPath)
 {
 #if defined (_WIN32)
     return ::MoveFileW(Utf8ToUtf16(oldPath).c_str(), Utf8ToUtf16(newPath).c_str());
-#elif defined (__linux__)
-    return ::rename(oldPath.c_str(), newPath.c_str()) == 0;
-#elif __cplusplus >= 201703L
-    std::error_code ec;
-    std::filesystem::rename(oldPath, newPath, ec);
-    return !ec;
 #else
-    static_assert(false);
+    return ::rename(oldPath.c_str(), newPath.c_str()) == 0;
 #endif
 }
 
@@ -239,14 +224,8 @@ bool RemoveFile(const std::string& path)
 {
 #if defined (_WIN32)
     return ::DeleteFileW(Utf8ToUtf16(path).c_str());
-#elif defined (__linux__)
-    return ::remove(path.c_str()) == 0;
-#elif __cplusplus >= 201703L
-    std::error_code ec;
-    std::filesystem::remove(path, ec);
-    return !ec;
 #else
-    static_assert(false);
+    return ::remove(path.c_str()) == 0;
 #endif
 }
 }
@@ -317,10 +296,10 @@ private:
 static LoggerImpl instance;
 
 const char* g_loggerLevelStr[LOGGER_LEVEL_COUNT] = {
-    "DEBUG",
+    "DBG",
     "INFO",
-    "WARNING",
-    "ERROR",
+    "WARN",
+    "ERR",
     "FATAL"
 };
 

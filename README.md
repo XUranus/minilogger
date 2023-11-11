@@ -83,7 +83,7 @@ Testing 1 million line of logs, archiving a throughput of 0.5 million lines of l
 
 | threads | each thread log | duration(sec) |
 |---------|-----------------|---------------|
-| 1000    | 1000            |       1.44      |
+| 1000    | 1000            |       1.44    |
 | 100     | 10000           |       1.42    |
 | 10      | 100000          |       1.06    |
 | 1       | 1000000         |       3.87    |
