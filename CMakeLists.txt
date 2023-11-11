@@ -10,18 +10,18 @@ message(STATUS "COVERAGE = ${COVERAGE}")
 
 # prepare 3rd libs
 set(CMAKE_FIND_PACKAGE_NO_PACKAGE_REGISTRY FALSE)
-find_package(zlib 1.1.2)
+find_package(ZLIB 1.1.2)
 if (ZLIB_FOUND)
-    message(STATUS "using local zlib, ZLIB_DIR=${ZLIB_DIR}")
+    message(STATUS "using local ZLIB, ZLIB_DIR=${ZLIB_DIR}")
 else()
-    message(STATUS "no local zlib found, ready to download and compile locally")
+    message(STATUS "no local ZLIB found, ready to download and compile locally")
     include(FetchContent)
     FetchContent_Declare(
-        zlib
+        ZLIB
         URL https://github.com/madler/zlib/archive/15c45adb76e81a7e3a8a9e17b2a56eb90f668f44.zip
     )
-    FetchContent_MakeAvailable(zlib)
-    message(STATUS "zlib_SOURCE_DIR = ${zlib_SOURCE_DIR}")
+    FetchContent_MakeAvailable(ZLIB)
+    message(STATUS "ZLIB_SOURCE_DIR = ${ZLIB_SOURCE_DIR}")
 endif()
 
 find_package(libzip)
