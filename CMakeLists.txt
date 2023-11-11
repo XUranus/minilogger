@@ -11,7 +11,8 @@ message(STATUS "COVERAGE = ${COVERAGE}")
 # check existing zlib and libzip or download and compile it`
 if(${CMAKE_HOST_WIN32})
     # github workflow cannot compile libzip
-    find_package(libzip REQUIRED)
+    set(CMAKE_PREFIX_PATH "C:/vcpkg/packages" "C:/vcpkg/packages/libzip_x64-windows" ${CMAKE_PREFIX_PATH})
+    find_package(libzip CONFIG REQUIRED)
     message(STATUS "Windows host need to install zlib and libzip first!")
 else()
     find_package(zlib 1.1.2)
