@@ -273,7 +273,7 @@ private:
 
 private:
     LoggerLevel             m_level { LoggerLevel::DEBUG };
-    CongestionControlPolicy m_congestionPolicy { CongestionControlPolicy::DROPPING };
+    CongestionControlPolicy m_congestionPolicy { CongestionControlPolicy::BLOCKING };
     bool                    m_inited { false };
     LoggerConfig            m_config;
     std::ofstream           m_file;
@@ -533,9 +533,6 @@ void LoggerImpl::ConsumerThread()
         m_file.write(m_backendBuffer, m_backendBufferOffset);
         if (m_file.tellp() >= m_config.fileSizeMax) {
             SwitchToNewLogFile();
-        }
-        if (m_abort) {
-            break;
         }
     }
     if (m_file) {
