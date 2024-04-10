@@ -1,16 +1,14 @@
-#include <assert.h>
-#include <cstdarg>
+#include "Logger.h"
+
 #include <cstdio>
 #include <ios>
 #include <system_error>
 #include <thread>
-#include <iomanip>
 #include <string>
 #include <sstream>
 #include <fstream>
 #include <mutex>
 #include <condition_variable>
-#include <atomic>
 #include <thread>
 #include <chrono>
 #include <ctime>
@@ -45,8 +43,6 @@
 #include <fcntl.h>
 #include <unistd.h>
 #endif
-
-#include "Logger.h"
 
 #ifdef _WIN32
     #define NEW_LINE "\r\n"; // CRLF
