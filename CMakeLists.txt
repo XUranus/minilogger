@@ -3,10 +3,20 @@ set(Project minilogger)
 project(${Project} C CXX)
 set(SOURCE_DIR ${${Project}_SOURCE_DIR})
 
+# check 3rd dependencies for github workflow
+set(
+    CMAKE_PREFIX_PATH
+    "C:/vcpkg/packages/zlib"
+    "C:/vcpkg/packages"
+    "C:/vcpkg"
+    ${CMAKE_PREFIX_PATH}
+)
+
 message(STATUS "Project = ${Project}")
 message(STATUS "SOURCE_DIR = ${SOURCE_DIR}")
 message(STATUS "CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE}")
 message(STATUS "COVERAGE = ${COVERAGE}")
+message(STATUS "CMAKE_PREFIX_PATH = ${CMAKE_PREFIX_PATH}")
 
 # prepare 3rd libs
 set(CMAKE_FIND_PACKAGE_NO_PACKAGE_REGISTRY FALSE)
