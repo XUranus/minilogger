@@ -6,9 +6,7 @@ set(SOURCE_DIR ${${Project}_SOURCE_DIR})
 # check 3rd dependencies for github workflow
 set(
     CMAKE_PREFIX_PATH
-    "C:/vcpkg/packages/zlib"
-    "C:/vcpkg/packages"
-    "C:/vcpkg"
+    "C:/vcpkg/packages/zlib_x64-windows"
     ${CMAKE_PREFIX_PATH}
 )
 
